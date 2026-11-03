@@ -29,6 +29,16 @@ def test_my_own_comment_clears_older_comments_from_others():
     assert i.others_since == [] and i.action == "Continue"
 
 
+def test_staleness_starts_exactly_at_stale_days():
+    assert run(make_item(updated_days=7)).bucket == "stale" and run(make_item(updated_days=6.9)).bucket == "ready"
+
+
+def test_unanswered_comment_urgency_is_capped_at_a_week():
+    year_old = run(make_item(comments=[make_comment("bob", 365)]))
+    week_old = run(make_item(comments=[make_comment("bob", 7)]))
+    assert year_old.score == week_old.score and "unanswered comments from others (365d) (+22)" in year_old.score_parts
+
+
 def test_stale_days_is_configurable():
     assert run(make_item(updated_days=5), stale_days=3).bucket == "stale"
     assert run(make_item(updated_days=5), stale_days=10).bucket == "ready"

@@ -110,6 +110,7 @@ def test_snoozing_hides_an_item_and_quiets_its_changes(tmp_path):
     assert I(30) not in by_id(b) and [s["id"] for s in b.snoozed] == [I(30)] and I(30) in b.fingerprints
     muted = next(c for c in b.changes if c.id == f"{I(30)}:comments")
     assert muted.attention is False
+    assert [e["attention"] for e in state.load_log(tmp_path / "state") if e["id"] == f"{I(30)}:comments"] == [False]  # also in the log
     assert I(30) in state.load_history(tmp_path / "state")[-1][1]["items"]  # hidden is not gone
     shown = pipeline.run(pipeline.Options(no_snooze=True), deps(tmp_path, 3))
     assert I(30) in by_id(shown) and shown.snoozed == []

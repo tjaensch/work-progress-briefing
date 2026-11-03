@@ -39,9 +39,9 @@ def snapshot(b: Briefing, hidden: list | None = None, hidden_incoming: list | No
 
 
 def status_progress(old: str, new: str) -> bool:
-    """Moving forward along todo -> in_progress -> in_review -> done. Moving into blocked is never progress."""
+    """Moving forward along todo -> in_progress -> in_review -> done (blocked ranks with todo, so moving into it is not)."""
     o, n = STATUS_RANK.get(old), STATUS_RANK.get(new)
-    return new != "blocked" and o is not None and n is not None and n > o
+    return o is not None and n is not None and n > o
 
 
 def diff_events(old: dict, new: dict, max_age_days: int = 6) -> list[Change]:
