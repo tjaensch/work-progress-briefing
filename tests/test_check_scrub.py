@@ -202,3 +202,21 @@ def test_hooks_run_the_scanner_and_are_executable():
         hook = root / ".githooks" / name
         assert hook.stat().st_mode & 0o111 and "check_scrub.py" in hook.read_text()
         assert flag in hook.read_text()
+
+
+def test_history_scan_survives_the_scanners_own_marker_text_and_decorators(repo, private, capsys):
+    (repo / "tool.py").write_text("\n".join(['marker = "@@COMMIT@@"', "@pytest.fixture", "def f(): pass", ""]))
+    commit(repo)
+    rc, out = check(repo, "--history", capsys=capsys)
+    assert rc == 0, out.out
+
+
+def test_history_findings_carry_the_right_commit_and_line_context(repo, private, capsys):
+    (repo / "a.txt").write_text("fine\n")
+    commit(repo, "one")
+    (repo / "b.txt").write_text(f"{SECRET}\n")
+    commit(repo, "two")
+    git_out = lambda *a: subprocess.run(["git", "-C", str(repo), *a], capture_output=True, text=True).stdout  # noqa: E731
+    second, first = git_out("rev-parse", "HEAD")[:10], git_out("rev-parse", "HEAD~1")[:10]
+    rc, out = check(repo, "--history", capsys=capsys)
+    assert f"history {second}:" in out.out and first not in out.out

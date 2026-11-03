@@ -151,24 +151,26 @@ def scan_history(repo: Path, patterns: list[Pattern]) -> list[Finding]:
         if len(parts) < 6:
             continue
         found += scan_text(f"commit {parts[0][:10]} (message/author)", "\n".join(parts[1:]), patterns)
-    marker = "@@COMMIT@@"  # a patch line always starts with +, -, space or @@ hunk header, so this cannot be file content
+    marker = "@@COMMIT@@"  # a patch line starts with +, -, space or an @@ hunk header followed by a space, never with this
     patch = git(repo, "log", "--all", "-p", "--no-color", f"--format={marker}%H")
-    for chunk in patch.split(marker)[1:]:
-        sha, _, body = chunk.partition("\n")
-        use, block = patterns, []
+    sha, use, block = "", patterns, []
 
-        def flush():
-            if block:
-                found.extend(scan_text(f"history {sha[:10]}", "\n".join(block), use))
+    def flush():
+        if block:
+            found.extend(scan_text(f"history {sha[:10]}", "\n".join(block), use))
 
-        for line in body.splitlines():
-            if line.startswith("diff --git "):
-                flush()
-                block = []
-                use = patterns_for(line.rsplit(" b/", 1)[-1], patterns)
-                found.extend(scan_name(f"history {sha[:10]} file {line.rsplit(' b/', 1)[-1]}", use))
+    for line in patch.splitlines():
+        if line.startswith(marker):
+            flush()
+            sha, use, block = line[len(marker):], patterns, []
+        elif line.startswith("diff --git "):
+            flush()
+            path = line.rsplit(" b/", 1)[-1]
+            use, block = patterns_for(path, patterns), []
+            found.extend(scan_name(f"history {sha[:10]} file {path}", use))
+        else:
             block.append(line)
-        flush()
+    flush()
     return found
 
 
