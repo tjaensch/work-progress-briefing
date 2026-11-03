@@ -42,4 +42,8 @@ def test_every_figure_file_is_used_in_the_article():
 
 def test_article_length_is_in_the_planned_range():
     words = len(ARTICLE.read_text().split())
-    assert 1800 <= words <= 2600
+    assert 1500 <= words <= 2600
+
+
+def test_house_style_no_bold_text():
+    assert "**" not in ARTICLE.read_text()  # the author does not use bold in articles

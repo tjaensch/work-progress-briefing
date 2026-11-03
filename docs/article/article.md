@@ -1,183 +1,134 @@
-# A work briefing that remembers: what I learned building one with an AI agent
+# A little tool that tells me what changed since I last looked
 
-*A tool that answers "where do I stand right now?" at any hour, and why the interesting part isn't the AI.*
+> When you have a long list of tickets, pull requests and review requests, and most of them are waiting on somebody else, it gets hard to tell what is ready for you to pick up, what is stuck, and what moved while you were in a meeting. This is a small open-source Python tool, built with GitHub Copilot in VS Code, that answers those questions at any time of the day. It never posts anything without asking first.
 
 ![The pipeline: sources are normalised, classified, snoozed, scored and turned into a plan. Two lanes branch off: one remembers (snapshot, diff, "since your last check", reports), one never writes by itself (drafts, preview, confirm, post).](figures/fig1-flow.png)
 
-I keep losing the same five minutes. Somewhere between the issue tracker, the pull requests I opened, the ones I was asked to
-review, and a pile of comments, there is a short list of things that actually need me today. Finding that list is
-a small job. Doing it over and over, at 9 am, again at 11, again after lunch, is where the day leaks away.
+What happens on every refresh, in one picture.
 
-So I built a tool that finds the list for me. It began as a *morning* briefing. It stopped being one the first time I ran it
-in the afternoon and it told me **what had changed since the last time I looked**. That single capability, a tool that
-remembers its previous run, turned out to shape almost everything else about it.
+The need came up in my day-to-day work. I have a long list of tickets assigned to me, with pull requests and reviews attached to a lot of them, and at any given moment most of the list is waiting on somebody else. What I wanted was simple: every morning, go through everything that has been updated, tell me which tickets are ready for me to continue, and also point out the ones I haven't touched yet that might be ready to start.
 
-This post is about the handful of design ideas that I think are worth stealing, and about how it was built with an AI coding
-agent, including the places where the agent and I got it wrong. The code is a small open-source Python project,
-[work-progress-briefing](https://github.com/tjaensch/work-progress-briefing), and it has a demo mode with invented data, so you
-can see everything below without an account.
+I looked at a couple of ways to get there. Claude Desktop was the first thing I thought of, but at the time it couldn't connect to most of the places my work lives. Copilot in VS Code could already reach the ticket tracker and GitHub, so that's where I started, and I had it build the first version as a script.
+
+It worked, and then something funny happened. I ran it in the afternoon, just to see, and it told me what had changed since the last time I ran it. That was so much more useful than the morning report that I stopped calling it a morning briefing. It became a "where do I stand right now" tool that I run whenever I feel like it.
+
+My own version reads the ticket tracker, mail and calendar. The one I'm sharing here sticks to GitHub issues and pull requests, because that's something anybody can try, and it comes with a demo that uses made-up data so you don't need an account to see it.
 
 ## What it does
 
-Run it and it reads your open issues, your open pull requests and your review requests (through the `gh` command line tool,
-so it never handles a token). It turns that into:
+You run it and it reads your open issues, your open pull requests and the review requests waiting on you. It uses the GitHub command line tool for that, so the script itself never touches a token. Then it gives you:
 
-- a **ranked plan** for the rest of the day, with the reason for every point in the ranking;
-- a **"since your last check"** list, split into things that need you and things that moved forward;
-- **drafts** of comments you might want to post, which it will never post on its own;
-- **stand-up, end-of-day and weekly reports** built from its own memory.
+* a ranked plan for the rest of the day, with the reason for every point in the ranking
+* a list of what changed since you last looked
+* drafts of comments you might want to post, which it never posts on its own
+* stand-up, end-of-day and weekly reports
 
-Here is the plan from the demo, a fictional team working in an invented organisation:
+This is the plan from the demo, a made-up team in a made-up organization:
 
 ![A terminal showing today's plan: item 1 "Rate limiter drops valid requests", next action "Approved: merge", reason "bucket: ready (+20); due in 2d (+20); quick win (+12)"; then four more items with next actions and reasons.](figures/fig2-plan.png)
 
-Notice the "Why" lines. Every point in a score has a name. When a ranking surprises me, I can see which rule produced it and
-change the rule, instead of arguing with a number.
+The demo's plan for a Wednesday morning. Every name in it is invented.
 
-## Six ideas worth stealing
+The "Why" lines are my favorite part. Every point in a score has a name, so when the ranking surprises me I can see which rule did it and change the rule, instead of arguing with a number.
 
-### 1. Remember the last run, and diff against it
+## Remembering the last run
 
-The cheapest way to know what changed is to save a snapshot of what you saw last time and compare. Each refresh writes a
-small JSON snapshot: for every item, its status, who commented, the state of its pull requests, whether CI is failing. Diffing
-two snapshots produces typed changes, and each change is tagged with two booleans: did something **move forward**, and
-**does it need me**?
+This is the idea that made the tool useful. Every time it runs, it saves a small snapshot of what it saw: the status of each item, who commented, the state of its pull requests, whether the checks are failing. The next run compares the new snapshot with the old one.
+
+Each difference gets two labels: did something move forward, and does it need me? That's all it takes to build a "since your last check" list.
 
 ![A terminal showing "Since your last check (18h ago)": four lines marked "needs you" (a review approved, a new comment, CI started failing, a new review request), then neutral changes such as a PR going from OPEN to MERGED, followed by "Progress today".](figures/fig3-since-last-check.png)
 
-Those two tags do a lot of work. "Needs you" is what a notification should be built from. "Moved forward" is what feeds a
-progress log. Two flags, one diff.
+Same demo, one day later.
 
-A small thing I got wrong at first: a merged pull request's review state "changes" from *review required* to *none*, and the
-tool dutifully reported it. A merged PR's review state is not news. The fix was one line, and the test that pins it is
-worth more than the line.
+I got a detail wrong at first. When a pull request merges, its review state flips from "review required" to "none", and the tool announced that as news. A merged PR's review state isn't news. One line to fix, plus a test so it stays fixed.
 
-### 2. Snooze until it matters, not until a date
+## Snoozing until something happens
 
-Most snooze features are a timer. A timer is the wrong tool when what you actually mean is "ignore this until something
-happens." So a snooze in this tool can end on a date, **or when a fingerprint of the item changes**, whichever comes
-first. The fingerprint is a hash of what a person would call a change: a new comment from someone else, the status moving, a
-pull request changing state or review or CI result.
+Most snooze buttons are timers. What I actually mean when I snooze something is "ignore this until something happens", so a snooze in this tool can end on a date, or when the item changes, whichever comes first. "Changes" means a new comment from someone else, the status moving, or a pull request changing state, review or checks.
 
 ```
 $ work-briefing snooze acme-labs/widget-api#5 --days 3 --reason parked
 Snoozed acme-labs/widget-api#5 until Sat 2026-03-14
 ```
 
-One detail makes it feel right: **your own comments don't count as a change.** Otherwise posting a nudge on a snoozed item
-would wake it up immediately, which is the opposite of what you wanted.
+My own comments don't count as a change. Otherwise posting a nudge on a snoozed item would wake it up right away, which is the opposite of what I wanted.
 
-### 3. Drafts, never writes
+## It never posts anything on its own
 
-The agentic part of this is deliberately dull. The tool *builds* comments and status changes you might want to make. It
-posts nothing. To post, you run `apply`, which re-reads the item's current status, shows you the exact text, tells you
-whether a status change is actually available right now, and asks.
+The tool builds comments and status changes I might want to make, but it doesn't post them. To post one I run a separate command, which looks up the item's current status again, shows me the exact text, tells me whether the status change is even possible right now, and asks.
 
 ![A terminal showing "work-briefing apply" for a status update: it prints the comment text, the prompt "Post this?" answered with n, and "Cancelled; nothing was written."](figures/fig4-apply-preview.png)
 
-Two rules keep this honest. If the item's status changed since the draft was made, `apply` refuses and asks you to run the
-briefing again, because the draft's wording was written for a world that no longer exists. And if the status change you
-asked for isn't available, it posts the comment only and says so, instead of failing halfway.
+Saying no is always an option.
 
-The text of mismatch drafts is fixed wording, not model output. "Status update: PR … has been merged. This is still marked in
-progress; reviewing whether it can move forward." It is boring on purpose: predictable, free, and the same every time.
+If the item's status changed after the draft was made, it refuses and asks me to run the briefing again, since the wording was written for a situation that doesn't exist anymore. And if the status change isn't available, it posts the comment only and tells me so.
 
-There is also a rule about *when* such a draft appears. It is offered only while nothing has touched the item since the
-merge. Posting the comment touches the item, so the draft doesn't come back. I first built a "no new draft for three
-days" cool-down, and replaced it once I realised the better question is not "how long ago did I last comment" but "has anything
-happened since the event this draft is about."
+The text of these drafts is fixed wording, not AI output. Something like "PR … has been merged. This is still marked in progress; reviewing whether it can move forward." Boring on purpose, and the same every time.
 
-### 4. A failure that nobody sees is worse than no tool
+There's also a rule about when such a draft shows up. It only appears while nothing has touched the item since the merge, because posting the comment touches the item and the draft goes away by itself. My first version had a "no new draft for three days" cooldown. Then I realized the real question isn't how long ago I last commented, it's whether anything has happened since the event the draft is about.
 
-A briefing you trust is dangerous when it is quietly stale. If a refresh fails, the tool writes a small status file, puts a
-banner at the top of the briefing file (so an editor tab that is already open shows the problem), and distinguishes errors
-that retrying can fix from ones it can't, like not being logged in. Files are written to a temp name and renamed, and
-anything that changes state takes a lock that disappears with its process, so a crash never leaves a stale lock behind.
+## When it breaks, I want to know
 
-None of this is glamorous. It is the difference between a script and something you can rely on at 4:50 pm.
+A briefing you trust is dangerous when it's quietly out of date. So when a refresh fails, the tool writes a small status file and puts a banner at the top of the briefing, which is useful because I usually have that file open in an editor tab. It also tells apart errors that retrying can fix from ones it can't, like not being logged in.
 
-### 5. Use a model sparingly; keep plain code for anything that must be predictable
+Files are written under a temporary name and then renamed, and anything that changes state takes a lock that disappears when the process dies, so a crash can't leave a stale lock behind. Is that overkill for a script I run by hand? Probably. But I run it from a few places, and I'd rather not find out what happens when two of them collide.
 
-The buckets (ready, waiting, blocked, stale), the next actions, the status-mismatch checks and the score are ordinary
-functions. They are cheap, instant, and testable, and I can explain any output. The public version contains no language
-model at all.
+## Where the AI is, and where it isn't
 
-In my own setup I do use one for a narrow job: a two-sentence "where I left off" summary of a long comment thread. It runs
-with tools switched off, the input is scrubbed of anything that looks like a secret, and answers are cached. The rule of thumb
-I landed on: if the output has to be the same every time, or if a wrong answer would be posted somewhere, it does not
-belong to a model.
+The buckets (ready, waiting, blocked, stale), the next actions and the score are ordinary functions. They're instant, easy to test, and I can explain any result. The public version doesn't have a language model in it at all.
 
-### 6. Reports from the log, with no invented hours
+In my own setup I do use one for a narrow job: a short summary of where I left off on an item with a long comment thread. It runs with tools turned off, anything that looks like a secret is scrubbed from the input first, and the answers are cached. My rule of thumb ended up being this: if the output has to be the same every time, or if a wrong answer could end up posted somewhere, it doesn't belong to a model.
 
-Because the tool already logs what it saw change, a stand-up, an end-of-day check and a weekly summary are just views of the
-log. They run instantly, offline, and give the same text for the same input.
+## Reports
+
+Since the tool already keeps a log of what it saw change, a stand-up, an end-of-day check and a weekly summary are just different views of that log. They run offline and instantly, and give the same text for the same input.
 
 ![A terminal showing "work-briefing report week": counts of items with activity, PRs merged and comments posted, a line saying "No hours", a note that the event log starts Mon 2026-03-09, then events grouped by item.](figures/fig5-week.png)
 
-Look at the two lines I care about. "No hours" is a promise: the report lists what the tool saw change and does not claim how
-long anything took. And the note that "the event log starts Mon" is the tool being honest that the first week is
-incomplete, instead of presenting a confident empty report.
+The weekly report from the demo.
 
-## How it was built, and why I trusted it
+Two lines matter to me here. "No hours" is a promise that the report only lists what the tool saw change, never how long anything took. And the note that the log starts on Monday is the tool being upfront that the first week is incomplete, instead of handing me a confident empty report.
 
-I built this with an AI coding agent (GitHub Copilot in VS Code). The agent typed most of the code. What made the result
-trustworthy was a loop I made it follow for every change, however small:
+## How I built it with Copilot
 
-1. **Plan the item first.** A written list of small items (A, B, C…), each with the design, the files it touches and what
-   "done" means. The agent works through one at a time.
-2. **Tests next to the change**, with fictional data only.
-3. **Break it on purpose.** Copy the project to a scratch folder, make one deliberate mistake in the code (flip a
-   comparison, delete a guard), and run the tests. If they still pass, the tests were not testing that line.
-4. **Run it for real once**, against the real service, read-only.
-5. **Docs, commit, CI.**
+The agent mode in [GitHub Copilot in VS Code](https://code.visualstudio.com/docs/copilot/overview) wrote most of the code. What made me trust the result was a routine I made it follow for every change, even tiny ones:
 
-Step 3 sounds paranoid. It found real gaps. For example, my tests passed with the "stale" rule's boundary flipped from
-"at least seven days" to "more than seven days", because no test sat exactly on the boundary. I added one.
+* write down the change first, in a plan with small items, and what "done" means for each
+* write tests next to it, with made-up data only
+* break it on purpose: copy the project somewhere else, make one deliberate mistake (flip a comparison, delete a check) and run the tests; if they still pass, they weren't testing that line
+* run it for real once, read-only
+* docs, commit, and let CI have a look
 
-### The mistakes that taught me something
+The breaking-on-purpose step found real gaps. My tests passed with the "stale" rule changed from "at least seven days" to "more than seven days", because nothing tested exactly seven days. Now something does.
 
-A few of the bugs are the kind that no amount of AI makes go away, and that the loop caught:
+Some of what went wrong along the way:
 
-- **My safety scanner leaked what it was scanning for.** I wrote a small guard that fails a commit if forbidden words appear
-  in files, file names, commit messages, authors, or any patch in history. Its first version reported a hit by printing the
-  file name, and the forbidden word was *in the file name*. A test caught it. The report now masks the match.
-- **The scanner's history parser broke on its own source.** It split the history log on a marker string, and the scanner's
-  own source code contained that marker. Fixed by only treating the marker at the start of a line as a marker.
-- **A test that couldn't fail.** I wrote `assert a or b or True` while rushing, and it hid that a report told the user to run
-  a command that didn't exist (`--apply` instead of `apply`). Reviewing my own assertions after the green run found it.
-- **My mutation harness was broken the first time.** I checked for survival by searching the output for the word
-  "passed", but a failing run also prints "1 failed, 5 passed". Every mutation "survived". It looked like my tests were
-  worthless. They weren't; the verifier was wrong. A check that produces only good news deserves suspicion.
+* I wrote a small guard that blocks a commit if certain words show up in files, file names, commit messages or anywhere in the history. The first version reported a hit by printing the file name, and the forbidden word was in the file name. A test caught that. Now the report masks the match.
+* The same guard split the history log on a marker string, and its own source code contained that marker. Whoops.
+* Copilot wrote a test assertion that could never fail (it ended in "or True"), and I approved it, so we share the blame. It was hiding that one of my reports told people to run a command that doesn't exist.
+* My break-it-on-purpose script was broken the first time. I checked for survivors by searching the output for the word "passed", but a failing run also prints "1 failed, 5 passed". Every single change "survived". For a minute I thought my tests were worthless. They weren't, the checker was wrong. When a check only ever brings good news, I should be suspicious of the check.
 
-The common thread: the agent and I both make plausible mistakes, and the loop's job is to make plausible mistakes expensive
-to keep.
+Copilot and I both make plausible mistakes. The routine is there to make them expensive to keep.
 
 ## Try it
 
-```bash
-git clone https://github.com/tjaensch/work-progress-briefing && cd work-progress-briefing
+```
+git clone https://github.com/tjaensch/work-progress-briefing
+cd work-progress-briefing
 python3 -m work_briefing demo
 ```
 
-The demo replays four invented "days" through the real GitHub code (only the `gh` command is faked), prints the final
-briefing and builds a stand-up and a weekly report from the same history. Commands pointed at the demo folder keep using
-demo data and never touch GitHub, including `apply`.
+The demo replays four made-up days through the real GitHub code, with only the `gh` command faked, prints the final briefing and builds a stand-up and a weekly report from the same history. Commands pointed at the demo folder keep using the demo data and never touch GitHub, including the one that posts.
 
-To use it on your own work, install `gh`, run `gh auth login`, then `work-briefing`. To use a different tracker, implement
-the four-method `Tracker` interface and return items using the shared status vocabulary
-(`todo`, `in_progress`, `in_review`, `blocked`, `done`). The GitHub adapter is about 250 lines and is the reference.
+To use it on your own work, install the [GitHub CLI](https://cli.github.com), run `gh auth login`, then `work-briefing`. If your work lives somewhere else, there's a small interface to implement for a new source: return items using the shared set of statuses (todo, in progress, in review, blocked, done) and, if you want drafts to be postable, four small methods. The GitHub adapter is about 250 lines and is the reference.
 
 ## What I'd do differently
 
-- **Start with the memory.** I added "since your last check" in the second week. It should have been day one. It is the
-  feature that made the tool useful at any hour.
-- **Write the "why" strings before the score.** Naming each point of a score first made me design rules I could defend.
-- **Treat the checks as code.** The scanner and the mutation harness both needed tests of their own.
-- **Build for a calendar and email next.** The part of my day this doesn't see is meetings and mail. That's a different
-  adapter, not a different tool.
+I'd start with the memory. I added "since your last check" in the second week, and it should have been there on day one, because it's the feature that made the tool useful at any hour of the day.
 
-The tool is small: roughly 2,300 lines of Python, 235 tests, no dependencies beyond the standard library. I think that's the
-real takeaway. The valuable part of an "AI-assisted" tool is rarely the AI. It is a few ordinary ideas (remember, explain, ask
-before writing, fail loudly) and a development loop that makes it hard to lie to yourself.
+I'd also write the "why" text before the score. Naming every point of a score first made me design rules I could actually explain.
 
-*The code is MIT licensed. Everything in the demo is fictional.*
+It's a small tool, around 2,300 lines of Python and about 240 tests, and the public version has no dependencies beyond the standard library. It probably won't fit anyone else's work exactly. But a few plain ideas (remember the last run, explain every number, ask before writing, fail loudly) turned out to matter more to me than the AI part, and I thought they might be useful to somebody else too.
+
+Code is on GitHub under the MIT license. Everything in the demo is made up.
