@@ -66,7 +66,8 @@ def derive_status(labels: list[str], prs: list[PullRequest]) -> str:
         return "blocked"
     if any(not p.draft for p in live):
         return "in_review"
-    if live or lower & IN_PROGRESS_LABELS:
+    merged_only = not live and any(not p.error and p.state == "MERGED" for p in prs)  # work landed, the issue is still open
+    if live or merged_only or lower & IN_PROGRESS_LABELS:
         return "in_progress"
     return "todo"
 

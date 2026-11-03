@@ -45,8 +45,9 @@ def test_open_blockers_make_a_todo_or_blocked_item_blocked_unless_someone_wrote(
     b = run(make_item(status="blocked", blockers=["acme-labs/widget-api#9"]))
     assert b.bucket == "blocked" and "acme-labs/widget-api#9" in b.action
     assert run(make_item(status="blocked", blockers=["x#1"], comments=[make_comment("bob", 1)])).bucket == "ready"
-    c = run(make_item(status="blocked"))
-    assert c.bucket == "ready" and "blockers cleared (+10)" in c.score_parts
+    c = run(make_item(status="blocked"))  # a blocked label with no linked blocker stays blocked until someone writes
+    assert (c.bucket, c.action) == ("blocked", "Still blocked")
+    assert run(make_item(status="blocked", comments=[make_comment("bob", 1)])).action == "Respond, then unblock"
 
 
 def test_in_review_waits_unless_there_is_something_to_do():
@@ -61,7 +62,7 @@ def test_approved_pr_is_a_quick_merge_unless_ci_fails_or_it_is_a_draft():
     ok = run(make_item(status="in_review", prs=[make_pr(review_state="approved")]))
     assert (ok.bucket, ok.action, ok.quick) == ("ready", "Approved: merge", True)
     red = run(make_item(status="in_review", prs=[make_pr(review_state="approved", ci_fail=1)]))
-    assert red.action == "Address review feedback" and not red.quick
+    assert red.action == "Fix failing CI on PR" and not red.quick  # approved but red: only the CI is left to fix
     assert not run(make_item(status="in_review", prs=[make_pr(review_state="approved", draft=True)])).quick
     assert run(make_item(prs=[make_pr(review_state="approved")])).quick  # also while still in progress
 
@@ -141,3 +142,26 @@ def test_quick_wins_are_listed_best_first():
     a = run(make_item("a#1", prs=[make_pr(review_state="approved")]))
     b = run(make_item("a#2", status="in_review", prs=[make_pr("MERGED")], priority="high"))
     assert rules.quick_wins([a, b, run(make_item("a#3"))]) == ["a#2", "a#1"]
+
+
+def test_incoming_requests_join_the_plan_by_score():
+    from work_briefing.models import Incoming
+    waiting = Incoming("review_request", "https://example.test/x/pull/3", "x/y: Add thing", detail="by bob", when=NOW - timedelta(days=4))
+    rules.score_incoming(waiting, NOW)
+    assert waiting.score == 14
+    plan = rules.build_plan([run(make_item("a#1"))], 5, [waiting])
+    assert [(p["kind"], p["ref"]) for p in plan] == [("item", "a#1"), ("review_request", waiting.id)]  # ready items score 25+
+    assert plan[1]["next"] == "Review it" and plan[1]["why"] == "by bob"
+    assert [p["ref"] for p in rules.build_plan([], 1, [waiting])] == [waiting.id]
+
+
+def test_incoming_score_grows_with_waiting_time_up_to_a_cap():
+    from work_briefing.models import Incoming
+    def score(days):
+        x = Incoming("review_request", "u", "t", when=NOW - timedelta(days=days))
+        rules.score_incoming(x, NOW)
+        return x.score
+    assert [score(0), score(2), score(5), score(30)] == [10, 12, 15, 15]
+    x = Incoming("review_request", "u", "t")
+    rules.score_incoming(x, NOW)
+    assert x.score == 10

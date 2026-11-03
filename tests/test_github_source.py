@@ -75,7 +75,7 @@ def test_priority_labels():
 @pytest.mark.parametrize("labels,prs,expected", [
     ([], [], "todo"), (["blocked"], [], "blocked"), (["In Progress"], [], "in_progress"),
     ([], [PullRequest("u", draft=True)], "in_progress"), ([], [PullRequest("u")], "in_review"),
-    (["blocked"], [PullRequest("u")], "blocked"), ([], [PullRequest("u", state="MERGED")], "todo"),
+    (["blocked"], [PullRequest("u")], "blocked"), ([], [PullRequest("u", state="MERGED")], "in_progress"), ([], [PullRequest("u", state="CLOSED")], "todo"),
     ([], [PullRequest("u", error="x")], "todo"),
 ])
 def test_derive_status(labels, prs, expected):

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from .models import Item
+from .models import Incoming, Item
 from .util import ago
 
 BUCKET_BASE = {"ready": 20, "start": 8, "stale": 6, "backlog": 0, "waiting": -10, "blocked": -15}
@@ -40,17 +40,18 @@ def classify(item: Item, now: datetime, stale_days: int = 7) -> None:
     item.reasons += [f"PR merged: {p.url}" for p in merged]
 
     if merged and not open_prs and item.status in ("todo", "blocked", "in_progress"):
-        _mismatch(item, "merged_open", f"PR merged but item is still {item.status}")
+        _mismatch(item, "merged_open", f"PR merged but item is still {item.status.replace('_', ' ')}")
     if closed and not open_prs and not merged and item.status == "in_review":
         _mismatch(item, "closed_unmerged", "PR closed without merging but item is still in review")
     if open_prs and item.status == "todo":
         _mismatch(item, "open_todo", "PR is open but item is still todo")
 
     if item.status == "blocked":
-        if others or not open_blockers:
-            item.bucket, item.action = "ready", "Respond, then unblock" if others else "Check whether it can move again"
+        if others:
+            item.bucket, item.action = "ready", "Respond, then unblock"
         else:
-            item.bucket, item.action = "blocked", f"Still blocked by {', '.join(open_blockers)}"
+            by = f" by {', '.join(open_blockers)}" if open_blockers else ""
+            item.bucket, item.action = "blocked", f"Still blocked{by}"
     elif item.status == "todo":
         if open_blockers:
             item.bucket, item.action = "blocked", f"Blocked by {', '.join(open_blockers)}"
@@ -62,7 +63,8 @@ def classify(item: Item, now: datetime, stale_days: int = 7) -> None:
         if merged and not open_prs:
             item.bucket, item.action, item.quick = "ready", "Merged: close out", True
         elif others or needs_work:
-            item.bucket, item.action = "ready", "Address review feedback"
+            only_ci = needs_work and not others and not any(p.review_state == "changes_requested" for p in needs_work)
+            item.bucket, item.action = "ready", "Fix failing CI on PR" if only_ci else "Address review feedback"
         elif approved:
             item.bucket, item.action, item.quick = "ready", "Approved: merge", True
         else:
@@ -97,8 +99,6 @@ def score(item: Item, now: datetime) -> None:
     if others:
         waited = (now - min(c.created for c in others)).days
         parts.append((15 + min(waited, 7), f"unanswered comments from others ({waited}d)"))
-    if item.status == "blocked" and not item.blockers and item.bucket == "ready":
-        parts.append((10, "blockers cleared"))
     for p in item.prs:
         if p.error or p.state != "OPEN":
             continue
@@ -126,12 +126,20 @@ def score(item: Item, now: datetime) -> None:
     item.score_parts = [f"{why} ({n:+g})" for n, why in sorted(parts, key=lambda x: -abs(x[0])) if n]
 
 
-def build_plan(items: list[Item], size: int) -> list[dict]:
-    """The top `size` items that are mine to act on now (not waiting, blocked or backlog), best first."""
-    actionable = [i for i in items if i.bucket in ("ready", "start", "stale")]
-    ranked = sorted(actionable, key=lambda i: (-i.score, i.id))[:size]
-    return [{"rank": n, "ref": i.id, "title": i.title, "next": i.action, "why": "; ".join(i.score_parts[:3]),
-             "score": i.score, "quick": i.quick} for n, i in enumerate(ranked, 1)]
+def build_plan(items: list[Item], size: int, incoming: list[Incoming] | None = None) -> list[dict]:
+    """The top `size` things to do now, best first: my items that are mine to act on (not waiting, blocked or backlog)
+    and anything waiting on me from elsewhere, such as a review request."""
+    rows = [{"kind": "item", "ref": i.id, "title": i.title, "next": i.action, "why": "; ".join(i.score_parts[:3]),
+             "score": i.score, "quick": i.quick} for i in items if i.bucket in ("ready", "start", "stale")]
+    rows += [{"kind": x.kind, "ref": x.id, "title": x.title, "next": "Review it" if x.kind == "review_request" else "Look at it",
+              "why": x.detail, "score": x.score, "quick": False} for x in incoming or []]
+    ranked = sorted(rows, key=lambda r: (-r["score"], r["ref"]))[:size]
+    return [{"rank": n, **r} for n, r in enumerate(ranked, 1)]
+
+
+def score_incoming(x: Incoming, now: datetime) -> None:
+    """A request someone is waiting on: base 10, plus a day of urgency per day waiting (up to 5)."""
+    x.score = 10 + min(max((now - x.when).days, 0), 5) if x.when else 10
 
 
 def quick_wins(items: list[Item]) -> list[str]:

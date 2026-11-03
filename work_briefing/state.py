@@ -78,6 +78,8 @@ def diff_events(old: dict, new: dict, max_age_days: int = 6) -> list[Change]:
             if op["state"] != p["state"]:
                 ev.append(Change(f"{pid}:state", "pr_state", f"{key}: {label} {op['state']} -> {p['state']}",
                                  progress=p["state"] == "MERGED"))
+            if p["state"] != "OPEN":
+                continue  # review and CI of a merged or closed PR are not news
             if op["review_state"] != p["review_state"]:
                 ev.append(Change(f"{pid}:review", "pr_review", f"{key}: {label} review {op['review_state']} -> {p['review_state']}",
                                  attention=p["review_state"] in ("approved", "changes_requested")))

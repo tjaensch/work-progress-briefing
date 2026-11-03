@@ -150,7 +150,7 @@ def test_eod_drafts_only_for_in_progress_items_not_updated_today():
     assert (d.id, d.kind, d.transition, d.status_at_draft) == ("a#1:eod_update", "eod_update", None, "in_progress")
     assert d.comment == ("End-of-day update: still in progress. PR https://example.test/o/r/pull/1 is open "
                          "(awaiting review, CI failing). Next: Fix the lint failure.")
-    assert "--apply a#1:eod_update" in text and "a#2:eod_update" not in text
+    assert "`work-briefing apply a#1:eod_update`" in text and "a#2:eod_update" not in text
 
 
 def test_eod_comment_falls_back_to_the_action_and_ignores_closed_prs():

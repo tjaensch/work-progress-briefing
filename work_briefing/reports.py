@@ -1,7 +1,7 @@
 """Stand-up, end-of-day and weekly reports from the event log and the latest briefing.
 
 Pure functions: no network, no model, and the same input gives the same text. They say what the briefing saw change,
-never hours and never detail it did not observe. `eod` also builds comment drafts (posted only through `--apply`)."""
+never hours and never detail it did not observe. `eod` also builds comment drafts (posted only through `apply`)."""
 from __future__ import annotations
 
 import json
@@ -231,7 +231,7 @@ def eod(log: list[dict], latest: dict | None, now: datetime) -> tuple[str, list[
         i = items[d.key]
         L += [f"- **{d.key}** {i['title']}: last updated {ago(parse_ts(i['updated']), now)}",
               f"  - Suggested comment: {d.comment}",
-              f"  - Post it (asks first): `work-briefing --apply {d.id}`"]
+              f"  - Post it (asks first): `work-briefing apply {d.id}`"]
     return "\n".join(L) + "\n", drafts
 
 

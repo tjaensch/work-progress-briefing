@@ -51,14 +51,21 @@ def test_pr_changes_state_review_and_ci():
     url = "https://example.test/acme-labs/widget-api/pull/7"
     old = snap_of(make_item("a#1", prs=[make_pr(url=url)]))
     new = snap_of(make_item("a#1", prs=[make_pr("MERGED", "approved", url=url)]))
-    got = kinds(state.diff_events(old, new))
-    assert got["pr_state"].progress and "widget-api#7 OPEN -> MERGED" in got["pr_state"].text
-    assert got["pr_review"].attention
+    assert kinds(state.diff_events(old, new))["pr_state"].progress and "widget-api#7 OPEN -> MERGED" in kinds(state.diff_events(old, new))["pr_state"].text
+    reviewed = kinds(state.diff_events(old, snap_of(make_item("a#1", prs=[make_pr("OPEN", "approved", url=url)]))))
+    assert reviewed["pr_review"].attention and "review review_required -> approved" in reviewed["pr_review"].text
     red = kinds(state.diff_events(old, snap_of(make_item("a#1", prs=[make_pr(url=url, ci_fail=1)]))))["ci_fail"]
     green = kinds(state.diff_events(snap_of(make_item("a#1", prs=[make_pr(url=url, ci_fail=1)])), old))["ci_ok"]
     assert red.attention and not green.attention
     appeared = kinds(state.diff_events(snap_of(make_item("a#1")), old))["pr_new"]
     assert not appeared.progress and "(OPEN)" in appeared.text
+
+
+def test_review_and_ci_changes_on_a_merged_pr_are_not_reported():
+    url = "https://example.test/acme-labs/widget-api/pull/7"
+    old = snap_of(make_item("a#1", prs=[make_pr(url=url, review_state="review_required")]))
+    new = snap_of(make_item("a#1", prs=[make_pr("MERGED", "none", url=url, ci_fail=1)]))
+    assert set(kinds(state.diff_events(old, new))) == {"pr_state"}
 
 
 def test_cleared_blocker_is_progress_and_needs_attention():
