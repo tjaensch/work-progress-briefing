@@ -1,18 +1,18 @@
 # Building a work briefing that remembers, with GitHub Copilot in VS Code
 
-> When you have a long list of tickets, pull requests and review requests, and most of them are waiting on somebody else, it gets hard to tell what is ready for you to pick up, what is stuck, and what moved while you were in a meeting. This is a small open-source Python tool that answers those questions at any time of the day. I built it with Copilot's agent mode in VS Code, and it's made to be driven by an agent too: the agent runs it, reads the result and drafts the comments, but nothing gets posted without my yes.
+> When you have a long list of Jira tickets, pull requests and review requests, and most of them are waiting on somebody else, it gets hard to tell what is ready for you to pick up, what is stuck, and what moved while you were in a meeting. This is a small open-source Python tool that answers those questions at any time of the day. I built it with Copilot's agent mode in VS Code, and it's made to be driven by an agent too: the agent runs it, reads the result and drafts the comments, but nothing gets posted without my yes.
 
 ![Four columns: your work (issues, pull requests, review requests) is read by the tool (plain code that remembers the last run, ranks, drafts and writes one JSON file), which a Copilot agent in chat reads and summarizes for you. A red band underneath says the only step that writes anywhere, posting a comment or changing a status, happens only after your yes.](figures/fig1-who-does-what.png)
 
 Who does what. The tool does the bookkeeping, the agent does the talking, and nothing gets posted without my yes.
 
-The need came up in my day-to-day work. I have a long list of tickets assigned to me, with pull requests and reviews attached to a lot of them, and at any given moment most of the list is waiting on somebody else. What I wanted was simple: every morning, go through everything that has been updated, tell me which tickets are ready for me to continue, and also point out the ones I haven't touched yet that might be ready to start.
+The need came up in my day-to-day work. I have a long list of Jira tickets assigned to me, with GitHub pull requests and reviews attached to a lot of them, and at any given moment most of the list is waiting on somebody else. What I wanted was simple: every morning, go through everything that has been updated, tell me which tickets are ready for me to continue, and also point out the ones I haven't touched yet that might be ready to start.
 
-I looked at a couple of ways to get there. Claude Desktop was the first thing I thought of, but at the time it couldn't connect to most of the places my work lives. Copilot in VS Code could already reach the ticket tracker and GitHub, so that's where I started, and I had it build the first version as a script.
+I looked at a couple of ways to get there. Claude Desktop was the first thing I thought of, but at the time it couldn't connect to most of the places my work lives. Copilot in VS Code could already reach Jira and GitHub, so that's where I started, and I had it build the first version as a script.
 
 It worked, and then something funny happened. I ran it in the afternoon, just to see, and it told me what had changed since the last time I ran it. That was so much more useful than the morning report that I stopped calling it a morning briefing. It became a "where do I stand right now" tool that I run whenever I feel like it.
 
-My own version reads the ticket tracker, mail and calendar. The one I'm sharing here sticks to GitHub issues and pull requests, because that's something anybody can try, and it comes with a demo that uses made-up data so you don't need an account to see it.
+My own version reads Jira, mail and calendar. The one I'm sharing here sticks to GitHub issues and pull requests, because that's something anybody can try, and it comes with a demo that uses made-up data so you don't need an account to see it. Jira workflows differ a lot from team to team, so a Jira adapter would need real configuration, but it would be the obvious next one.
 
 ## What it does
 
@@ -142,7 +142,7 @@ python3 -m work_briefing demo
 
 The demo replays four made-up days through the real GitHub code, with only the `gh` command faked, prints the final briefing and builds a stand-up and a weekly report from the same history. Commands pointed at the demo folder keep using the demo data and never touch GitHub, including the one that posts.
 
-To use it on your own work, install the [GitHub CLI](https://cli.github.com), run `gh auth login`, then `work-briefing`. If you want to drive it from Copilot chat, copy `examples/copilot-skill/SKILL.md` to `.github/skills/work-progress-briefing/` in your workspace. If your work lives somewhere else, there's a small interface to implement for a new source: return items using the shared set of statuses (todo, in progress, in review, blocked, done) and, if you want drafts to be postable, four small methods. The GitHub adapter is about 250 lines and is the reference.
+To use it on your own work, install the [GitHub CLI](https://cli.github.com), run `gh auth login`, then `work-briefing`. If you want to drive it from Copilot chat, copy `examples/copilot-skill/SKILL.md` to `.github/skills/work-progress-briefing/` in your workspace. If your work lives somewhere else, Jira for example, there's a small interface to implement for a new source: return items using the shared set of statuses (todo, in progress, in review, blocked, done) and, if you want drafts to be postable, four small methods. The GitHub adapter is about 250 lines and is the reference.
 
 ## What I'd do differently
 
