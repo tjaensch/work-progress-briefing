@@ -94,6 +94,19 @@ Optional `config.json` in the home folder; an unknown key is an error, so a typo
 }
 ```
 
+## Use it from an AI agent (optional)
+
+The tool has no model inside it, but it is built to be driven by one. [`examples/copilot-skill/SKILL.md`](examples/copilot-skill/SKILL.md)
+is a skill for GitHub Copilot in VS Code: copy it (a copy, not a symlink, since symlinked skills are not always discovered)
+to `.github/skills/work-progress-briefing/SKILL.md` in your workspace, reload the window, and type
+`/work-progress-briefing` in chat. The agent refreshes the briefing, summarises `latest.json`, answers follow-up questions
+("why is that one first?"), snoozes things on request, and shows you each draft word for word. It posts only after you say
+yes, by running `work-briefing apply <id> --yes`, and `apply` still refuses if the item changed in the meantime.
+
+What makes the tool easy for an agent to use: all facts are in one JSON file with stable ids, every action is a plain
+command with clear exit codes, a failed refresh says so instead of leaving stale data to be summarised, and the only
+command that writes is the one that asks first.
+
 ## How it works
 
 ```
