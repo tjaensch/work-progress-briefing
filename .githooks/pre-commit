@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Blocks a commit that contains anything on the scrub lists. Strict: needs the private denylist (see scripts/check_scrub.py).
+exec python3 "$(git rev-parse --show-toplevel)/scripts/check_scrub.py"

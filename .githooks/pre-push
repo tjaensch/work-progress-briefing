@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Blocks a push if any commit (message, author or patch) contains anything on the scrub lists.
+exec python3 "$(git rev-parse --show-toplevel)/scripts/check_scrub.py" --history

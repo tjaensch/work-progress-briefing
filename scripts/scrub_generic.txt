@@ -1,0 +1,23 @@
+# Generic scrub patterns: shapes only, no organisation terms (the real terms live in the private denylist).
+# One case-insensitive regex per line.
+
+# Personal paths
+/home/[a-z0-9_.-]+/
+/Users/[a-z0-9_.-]+/
+[a-z]:\\users\\
+onedrive
+
+# (case-sensitive, so UUID fragments and lowercase words do not match)
+# Jira-style keys other than the fictional DEMO-n (common technical look-alikes are allowed)
+(?-i:\b(?!DEMO-|SHA-|ISO-|RFC-|UTF-|CVE-|PEP-|HTTP-|TLS-|GPT-|MD-|AES-)[A-Z][A-Z0-9]{1,9}-\d{2,6}\b)
+
+# Atlassian site names and account ids
+atlassian\.net
+\b\d{5,6}:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-
+
+# Email addresses other than GitHub noreply and example domains
+[\w.+-]+@(?!users\.noreply\.github\.com\b|example\.(?:com|org|net)\b)[\w-]+\.[\w.-]+
+
+# Government and internal hostnames
+\.gov\b
+\binternal\.[a-z0-9-]+\.[a-z]{2,}
