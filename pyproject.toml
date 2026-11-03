@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "work-progress-briefing"
+version = "0.1.0"
+description = "Where your work stands right now: a ranked plan, what changed since you last looked, snoozing, drafts you approve, and reports."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = []
+
+[project.scripts]
+work-briefing = "work_briefing.cli:main"
+
+[tool.setuptools]
+packages = ["work_briefing"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
