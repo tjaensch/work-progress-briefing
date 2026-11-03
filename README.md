@@ -94,6 +94,13 @@ Optional `config.json` in the home folder; an unknown key is an error, so a typo
 }
 ```
 
+## Use it from your editor (optional)
+
+It's meant to live where you already work. [`examples/vscode/tasks.json`](examples/vscode/tasks.json) has two VS Code tasks: one
+runs the briefing and opens `latest.md` in a tab whenever you open the folder (VS Code asks once to allow automatic tasks), the
+other is "refresh now" from the command palette (Tasks: Run Task). Copy it to `.vscode/tasks.json`. If a refresh fails, the
+failure banner appears at the top of that same tab.
+
 ## Use it from an AI agent (optional)
 
 The tool has no model inside it, but it is built to be driven by one. [`examples/copilot-skill/SKILL.md`](examples/copilot-skill/SKILL.md)

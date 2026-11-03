@@ -1,0 +1,20 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Work briefing",
+            "type": "shell",
+            "command": "work-briefing && code -r \"${WPB_HOME:-$HOME/.local/share/work-progress-briefing}/out/latest.md\"",
+            "runOptions": { "runOn": "folderOpen" },
+            "presentation": { "reveal": "silent", "panel": "dedicated", "focus": false, "clear": true },
+            "problemMatcher": []
+        },
+        {
+            "label": "Work briefing (refresh now)",
+            "type": "shell",
+            "command": "work-briefing && code -r \"${WPB_HOME:-$HOME/.local/share/work-progress-briefing}/out/latest.md\"",
+            "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+            "problemMatcher": []
+        }
+    ]
+}

@@ -12,7 +12,7 @@ Claude Desktop was the first thing I thought of, but at the time it couldn't con
 
 It worked, and then something funny happened. I ran it in the afternoon, just to see, and it told me what had changed since the last time I ran it. That was so much more useful than the morning report that it stopped being a morning briefing and became a "where do I stand right now" tool.
 
-My own version reads Jira, mail and calendar. The one I'm sharing here sticks to GitHub issues and pull requests, because that's something anybody can try, and it comes with a demo that uses made-up data so you don't need an account to see it.
+I built it to live in my editor, because that's where I spend most of my day. A VS Code task opens the briefing in a tab when I open the project, a failure shows up as a banner in that same tab, and the chat skill lets me ask about it without leaving the window. The briefing should come to where I already am, instead of being one more tab I have to remember to check. My own version pulls Jira, GitHub, mail and my calendar into that one place. The one I'm sharing here sticks to GitHub issues and pull requests, because that's something anybody can try, and it comes with a demo that uses made-up data so you don't need an account to see it.
 
 ## What it does
 
@@ -90,8 +90,8 @@ None of that works unless the tool is easy for an agent to drive. What helped:
 
 * everything the tool knows is in one JSON file with stable ids, so the agent reads facts instead of guessing
 * every action is one plain command with clear exit codes, and a failed refresh says so instead of leaving the agent to summarize stale data
-* the only command that writes anywhere asks for confirmation, and the flag that skips the question is meant for exactly one situation: I already said yes in chat
-* I don't rely on the agent's judgment about what's safe, because the tool refuses on its own when the status changed after the draft was made
+* the only command that writes anywhere asks first, and the flag that skips the question is meant for one situation: I already said yes in chat
+* I don't rely on the agent's judgment about what's safe, because the tool itself refuses when the status changed after the draft was made
 
 I like that split. The agent is good at reading, explaining and talking to me. Plain code is good at being exactly right.
 
@@ -101,7 +101,7 @@ The buckets, the next actions and the score are ordinary functions that are inst
 
 ## Reports
 
-Since the tool already keeps a log of what it saw change, a stand-up, an end-of-day check and a weekly summary are just different views of that log. They run offline and instantly, and give the same text for the same input.
+Since the tool already keeps a log of what it saw change, a stand-up, an end-of-day check and a weekly summary are just views of that log. They run offline and give the same text for the same input.
 
 ![A terminal showing "work-briefing report week": counts of items with activity, PRs merged and comments posted, a line saying "No hours", a note that the event log starts Mon 2026-03-09, then events grouped by item.](figures/fig5-week.png)
 
@@ -137,9 +137,9 @@ cd work-progress-briefing
 python3 -m work_briefing demo
 ```
 
-The demo replays four made-up days through the real GitHub code, with only the `gh` command faked, prints the final briefing and builds a stand-up and a weekly report from the same history. Commands pointed at the demo folder keep using the demo data and never touch GitHub, including the one that posts.
+The demo replays four made-up days through the real GitHub code, with only the `gh` command faked, and prints the final briefing plus a stand-up and a weekly report. Commands pointed at the demo folder never touch GitHub, including the one that posts.
 
-To use it on your own work, install the [GitHub CLI](https://cli.github.com), run `gh auth login`, then `work-briefing`. If you want to drive it from Copilot chat, copy `examples/copilot-skill/SKILL.md` to `.github/skills/work-progress-briefing/` in your workspace. If your work lives somewhere else, Jira for example, there's a small interface to implement for a new source: return items using the shared set of statuses (todo, in progress, in review, blocked, done) and, if you want drafts to be postable, four small methods. The GitHub adapter is about 250 lines and is the reference.
+To use it on your own work, install the [GitHub CLI](https://cli.github.com), run `gh auth login`, then `work-briefing`. To have it open in your editor when you open a project, copy `examples/vscode/tasks.json` to `.vscode/`. If you want to drive it from Copilot chat, copy `examples/copilot-skill/SKILL.md` to `.github/skills/work-progress-briefing/` in your workspace.
 
 ## Why this is a stub, and how to make it useful for real work
 
