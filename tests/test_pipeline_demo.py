@@ -205,6 +205,7 @@ def test_markdown_has_every_section_and_names_the_apply_command(tmp_path):
                     "## Ready to continue (4)", "## Ready to start (1)", "## Waiting on others (1)", "## Blocked (1)", "## Stale (1)",
                     "## Backlog (1)", "## Drafts for your approval", "## Sources"):
         assert heading in md, heading
+    assert "5. **review request** acme-labs/docs-site: Fix broken links in the API guide" in md
     assert f"`work-briefing apply {I(21)}:status_update`" in md and "(snooze: `acme-labs/widget-api#21:mismatch`)" in md
 
 

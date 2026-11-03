@@ -7,7 +7,7 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from . import __version__, actions, github_source as gh, reports, snooze, state, status
+from . import __version__, actions, github_source as gh, locking, reports, snooze, state, status
 from .config import Config, home_dir, load_config
 from .outputs import prune_old, write_outputs
 from .pipeline import Deps, Options, run
@@ -50,6 +50,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap_.add_argument("--yes", action="store_true", help="skip the confirmation prompt (use after confirming elsewhere)")
 
     sub.add_parser("demo", help="run on built-in fictional data, no accounts needed")
+    ap.add_argument("--lock-wait", type=float, default=60, metavar="SECONDS",
+                    help="how long to wait for another refresh or snooze change to finish (default 60)")
     raw = list(argv) if argv is not None else sys.argv[1:]
     a = ap.parse_args(raw)
     return a if a.command else ap.parse_args([*raw, "run"])  # plain `work-briefing` means `run`
@@ -202,6 +204,20 @@ def apply_command(a: argparse.Namespace, tracker=None, now: datetime | None = No
     return 0 if actions.apply_draft(draft, tracker, confirm, assume_yes=a.yes) else 1
 
 
+LOCK_FILE = ".lock"  # in the output folder; held by every command that writes state, so they never overlap
+EXIT_BUSY = 75
+
+
+def locked(a: argparse.Namespace, fn, *args) -> int:
+    """Run a state-writing command without overlapping another one (a refresh reads and writes the same files)."""
+    try:
+        with locking.file_lock(dirs(a)[1] / LOCK_FILE, a.lock_wait):
+            return fn(*args)
+    except locking.LockBusy as e:
+        print(f"Another refresh or snooze change is running (pid {e.holder or '?'}); try again in a moment.", file=sys.stderr)
+        return EXIT_BUSY
+
+
 def main(argv: list[str] | None = None) -> int:
     a = parse_args(argv)
     cmd = a.command or "run"
@@ -209,9 +225,9 @@ def main(argv: list[str] | None = None) -> int:
         if cmd == "report":
             return report_command(a)
         if cmd in ("snooze", "dismiss"):
-            return snooze_command(a)
+            return locked(a, snooze_command, a)
         if cmd == "unsnooze":
-            return unsnooze_command(a)
+            return locked(a, unsnooze_command, a)
         if cmd == "snoozes":
             return list_snoozes_command(a)
         if cmd == "apply":
@@ -220,7 +236,7 @@ def main(argv: list[str] | None = None) -> int:
             from .demo import demo_command
 
             return demo_command(a)
-        return run_command(a, build_deps(a))
+        return locked(a, run_command, a, build_deps(a))
     except (ValueError, OSError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2

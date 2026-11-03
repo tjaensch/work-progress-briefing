@@ -36,7 +36,8 @@ def render_markdown(b: Briefing) -> str:
     if not b.plan:
         L.append("Nothing to do right now.")
     for p in b.plan:
-        L.append(f"{p['rank']}. **{p['ref']}** {p['title']}  \n   Next: {p['next']}" + (f"  \n   Why: {p['why']}" if p["why"] else ""))
+        label = p["ref"] if p["kind"] == "item" else p["kind"].replace("_", " ")
+        L.append(f"{p['rank']}. **{label}** {p['title']}  \n   Next: {p['next']}" + (f"  \n   Why: {p['why']}" if p["why"] else ""))
     L.append("")
     if b.last_check:
         L += [f"## Since your last check ({since_text(b.last_check, b.now)})"]
