@@ -8,11 +8,11 @@ Who does what. The tool does the bookkeeping, the agent does the talking, and no
 
 The need came up in my day-to-day work. I have a long list of Jira tickets assigned to me, with GitHub pull requests and reviews attached to a lot of them, and at any given moment most of the list is waiting on somebody else. What I wanted was simple: every morning, go through everything that has been updated, tell me which tickets are ready for me to continue, and also point out the ones I haven't touched yet that might be ready to start.
 
-I looked at a couple of ways to get there. Claude Desktop was the first thing I thought of, but at the time it couldn't connect to most of the places my work lives. Copilot in VS Code could already reach Jira and GitHub, so that's where I started, and I had it build the first version as a script.
+Claude Desktop was the first thing I thought of, but at the time it couldn't connect to most of the places my work lives. Copilot in VS Code could already reach Jira and GitHub, so I started there and had it build the first version as a script.
 
-It worked, and then something funny happened. I ran it in the afternoon, just to see, and it told me what had changed since the last time I ran it. That was so much more useful than the morning report that I stopped calling it a morning briefing. It became a "where do I stand right now" tool that I run whenever I feel like it.
+It worked, and then something funny happened. I ran it in the afternoon, just to see, and it told me what had changed since the last time I ran it. That was so much more useful than the morning report that it stopped being a morning briefing and became a "where do I stand right now" tool.
 
-My own version reads Jira, mail and calendar. The one I'm sharing here sticks to GitHub issues and pull requests, because that's something anybody can try, and it comes with a demo that uses made-up data so you don't need an account to see it. Jira workflows differ a lot from team to team, so a Jira adapter would need real configuration, but it would be the obvious next one.
+My own version reads Jira, mail and calendar. The one I'm sharing here sticks to GitHub issues and pull requests, because that's something anybody can try, and it comes with a demo that uses made-up data so you don't need an account to see it.
 
 ## What it does
 
@@ -76,7 +76,7 @@ There's also a rule about when such a draft shows up. It only appears while noth
 
 A briefing you trust is dangerous when it's quietly out of date. So when a refresh fails, the tool writes a small status file and puts a banner at the top of the briefing, which is useful because I usually have that file open in an editor tab. It also tells apart errors that retrying can fix from ones it can't, like not being logged in.
 
-Files are written under a temporary name and then renamed, and anything that changes state takes a lock that disappears when the process dies, so a crash can't leave a stale lock behind. Overkill for a script I run by hand? Probably. But I'd rather not find out what happens when two runs collide.
+Files are written under a temporary name and then renamed, and anything that changes state takes a lock, so two runs can't trample each other.
 
 ## Agentic AI, twice
 
@@ -97,9 +97,7 @@ I like that split. The agent is good at reading, explaining and talking to me. P
 
 ## Where the AI isn't
 
-The buckets (ready, waiting, blocked, stale), the next actions and the score are ordinary functions. They're instant, easy to test, and I can explain any result. The tool itself doesn't call a language model at all.
-
-In my own setup I do use one for a narrow job: a short summary of where I left off on an item with a long comment thread, with tools turned off, secrets scrubbed from the input and the answers cached. My rule of thumb: if the output has to be the same every time, or if a wrong answer could end up posted somewhere, it doesn't belong to a model.
+The buckets, the next actions and the score are ordinary functions that are instant, easy to test and easy to explain, and the tool itself doesn't call a language model at all. In my own setup I do use one for a narrow job, a short summary of where I left off on an item with a long comment thread, with tools turned off, secrets scrubbed from the input and the answers cached. My rule of thumb: if the output has to be the same every time, or a wrong answer could end up posted somewhere, it doesn't belong to a model.
 
 ## Reports
 
@@ -109,7 +107,7 @@ Since the tool already keeps a log of what it saw change, a stand-up, an end-of-
 
 The weekly report from the demo.
 
-Two lines matter to me here. "No hours" is a promise that the report only lists what the tool saw change, never how long anything took. And the note that the log starts on Monday admits that the first week is incomplete, instead of handing me a confident empty report.
+"No hours" is a promise that the report only lists what the tool saw change, never how long anything took, and the note about the log starting on Monday admits that the first week is incomplete.
 
 ## How I built it with Copilot
 
@@ -125,10 +123,9 @@ The breaking-on-purpose step found real gaps. My tests passed with the "stale" r
 
 Some of what went wrong along the way:
 
-* I wrote a small guard that blocks a commit if certain words show up in files, file names, commit messages or anywhere in the history. The first version reported a hit by printing the file name, and the forbidden word was in the file name. A test caught that. Now the report masks the match.
-* The same guard split the history log on a marker string, and its own source code contained that marker. Whoops.
-* Copilot wrote a test assertion that could never fail (it ended in "or True"), and I approved it, so we share the blame. It was hiding that one of my reports told people to run a command that doesn't exist.
-* My break-it-on-purpose script was broken the first time. I checked for survivors by searching the output for the word "passed", but a failing run also prints "1 failed, 5 passed". Every single change "survived". For a minute I thought my tests were worthless. They weren't, the checker was wrong. When a check only ever brings good news, I should be suspicious of the check.
+* I wrote a small guard that blocks a commit if certain words show up in files, file names, commit messages or anywhere in the history. The first version reported a hit by printing the file name, and the forbidden word was in the file name. A test caught that.
+* Copilot wrote a test assertion that could never fail (it ended in "or True"), and I approved it, so we share the blame. It was hiding that one of my reports named a command that doesn't exist.
+* My break-it-on-purpose script was broken the first time. I checked for survivors by searching the output for the word "passed", but a failing run also prints "1 failed, 5 passed", so every single change "survived". For a minute I thought my tests were worthless. They weren't, the checker was wrong.
 
 Copilot and I both make plausible mistakes. The routine is there to make them expensive to keep.
 
@@ -151,12 +148,11 @@ The version I use at work is about twice the size of this one, and it's tied to 
 So what you get here is the skeleton without the specifics: remembering the last run, ranking with reasons, snoozing, drafts with a confirmation step, reports, a loud failure signal and an agent skill. What's missing is your work. Here's how I'd turn it into something useful:
 
 * Start from where your work lives. Write an adapter for it that returns items with the shared statuses. The GitHub one is the template, and it's a good job for Copilot too: point it at `github_source.py` and ask for the same thing for your tracker.
-* Map your workflow onto the statuses (todo, in progress, in review, blocked, done). The odd statuses your team invented are where the real value is.
-* Decide what "ready to continue" means for you, and change the rules to match. Mine mostly came from asking what I keep checking by hand.
+* Map your workflow onto the statuses (todo, in progress, in review, blocked, done), and change the rules so "ready to continue" means what it means for you. Mine mostly came from asking what I keep checking by hand.
 * Add whatever you lose time to. For me that was mail and calendar. For you it might be an incident channel or a deploy dashboard.
 * Write the drafts your team would actually send, and who should get tagged, in fixed wording.
 * Put your own rules into the agent skill: what it may do on its own, and what always needs a yes.
-* Make it run without you thinking about it, from a scheduler or an editor task, so the failure banner has something to warn you about.
+* Make it run without you thinking about it, from a scheduler or an editor task.
 
 If you build your own, start with the memory. It's the feature that made the tool useful at any hour of the day, and everything else got easier once it was there.
 
