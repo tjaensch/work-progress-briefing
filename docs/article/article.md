@@ -82,7 +82,7 @@ Files are written under a temporary name and then renamed, and anything that cha
 
 "Agentic AI" gets thrown around a lot, so here's what it means in this project. It shows up in two places, and they're quite different.
 
-The first is how I built the tool. In agent mode, Copilot doesn't just suggest the next line of code. I describe what I want and it plans the steps, edits several files, runs the tests, reads the failures and tries again, until I stop it. My job turned into reviewing and steering: picking the next item on the plan, and deciding what "done" means for it.
+The first is how I built the tool. I used Copilot in agent mode with Claude Sonnet 5.5 as the model, and it wrote all of the code and tests. In agent mode Copilot doesn't just suggest the next line of code. I describe what I want and it plans the steps, edits several files, runs the tests, reads the failures and tries again, until I stop it. I didn't compare other models, so I can't tell you how much of this is down to that one. My job turned into reviewing and steering: picking the next item on the plan, and deciding what "done" means for it.
 
 The second is how I use the tool. The repo has a short skill file for Copilot chat. I type /work-progress-briefing and the agent runs the briefing, reads the JSON file it writes, and gives me a short summary of what changed, the plan for the rest of the day and what's waiting on me. Then I can ask follow-ups like "why is that one first?" or "snooze that until Friday" and it runs the right command. For drafts, it shows me the exact text and waits for a yes before it runs the one command that posts.
 

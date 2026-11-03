@@ -181,6 +181,11 @@ messages, authors and every patch for patterns that must never be published (hom
 aren't the fictional `DEMO-n`, account ids, non-example email addresses), plus a private list of terms kept outside the
 repository. CI runs only the generic patterns.
 
+## How it was built
+
+Written with GitHub Copilot in VS Code, in agent mode with Claude Sonnet 5.5 as the model, working through a written plan one
+small item at a time. Each change got tests, a deliberate-breakage check, a live run and a CI pass before it was committed.
+
 ## Status
 
 Version 0.1. GitHub is the only built-in source. Not built: a long-running scheduler (use cron or your editor's task
