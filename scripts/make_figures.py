@@ -134,12 +134,114 @@ def boxes(path: Path) -> None:
     img.save(path, optimize=True)
 
 
+def wrap(text: str, font, width: int) -> list[str]:
+    lines, cur = [], ""
+    for word in text.split():
+        trial = f"{cur} {word}".strip()
+        if font.getlength(trial) <= width or not cur:
+            cur = trial
+        else:
+            lines.append(cur)
+            cur = word
+    return lines + [cur] if cur else lines
+
+
+def column(d, x, y, w, h, title, bullets, fill, edge="#3b4252"):
+    fb, f = ImageFont.truetype(SANS_BOLD, 24), ImageFont.truetype(SANS, 19)
+    d.rounded_rectangle([x, y, x + w, y + h], radius=16, fill=fill, outline=edge, width=2)
+    d.text((x + w / 2, y + 30), title, font=fb, fill="#2e3440", anchor="mm")
+    cy = y + 66
+    for b in bullets:
+        lines = wrap(b, f, w - 52)
+        d.text((x + 22, cy), "\u2022", font=f, fill="#2e3440")
+        for line in lines:
+            d.text((x + 40, cy), line, font=f, fill="#2e3440")
+            cy += 26
+        cy += 12
+
+
+def arrow(d, x1, y1, x2, y2, color="#4c566a", width=4):
+    d.line([x1, y1, x2, y2], fill=color, width=width)
+    if y1 == y2:
+        sign = 1 if x2 > x1 else -1
+        d.polygon([(x2, y2), (x2 - 14 * sign, y2 - 8), (x2 - 14 * sign, y2 + 8)], fill=color)
+    else:
+        sign = 1 if y2 > y1 else -1
+        d.polygon([(x2, y2), (x2 - 8, y2 - 14 * sign), (x2 + 8, y2 - 14 * sign)], fill=color)
+
+
+def who_does_what(path: Path) -> None:
+    """The top figure: four actors, and the one gate before anything is written."""
+    w, h = 1500, 610
+    img = Image.new("RGB", (w, h), "#ffffff")
+    d = ImageDraw.Draw(img)
+    fb, f, fs = ImageFont.truetype(SANS_BOLD, 22), ImageFont.truetype(SANS, 19), ImageFont.truetype(SANS, 17)
+    top, ch = 40, 300
+    cw, gap = 320, 56
+    xs = [30 + i * (cw + gap) for i in range(4)]
+    column(d, xs[0], top, cw, ch, "Your work", ["Issues assigned to you", "Pull requests you opened", "Review requests waiting on you"], "#e5f0ff")
+    column(d, xs[1], top, cw, ch, "The tool (plain code)", ["Remembers the last run", "Ranks what is next, with reasons",
+                                                        "Drafts comments in fixed wording", "Writes one JSON file with all of it"], "#e8f6e8")
+    column(d, xs[2], top, cw, ch, "Copilot agent (in chat)", ["Runs the tool and reads the JSON", "Summarizes what changed", "Answers follow-ups, snoozes things",
+                                                          "Shows each draft word for word"], "#f3e8ff")
+    column(d, xs[3], top, cw, ch, "You", ["Type /work-progress-briefing", "Read the summary, ask questions", "Say yes or no to a draft"], "#fff3d6")
+    mid = top + 130
+    for a, b in zip(xs, xs[1:]):
+        arrow(d, a + cw + 6, mid, b - 6, mid)
+    d.text((xs[0] + cw + gap / 2, mid - 24), "reads", font=fs, fill="#4c566a", anchor="mm")
+    d.text((xs[1] + cw + gap / 2, mid - 24), "JSON", font=fs, fill="#4c566a", anchor="mm")
+    d.text((xs[2] + cw + gap / 2, mid - 24), "talks", font=fs, fill="#4c566a", anchor="mm")
+    # the gate
+    gy, gh = 420, 150
+    d.rounded_rectangle([30, gy, w - 30, gy + gh], radius=16, fill="#ffe8e8", outline="#c0392b", width=3)
+    d.text((w / 2, gy + 34), "The only step that writes anywhere", font=fb, fill="#7b241c", anchor="mm")
+    d.text((w / 2, gy + 74), "Posting a comment or changing a status happens only after your yes.", font=f, fill="#2e3440", anchor="mm")
+    d.text((w / 2, gy + 106), "The tool shows the exact text first and refuses if the item changed since the draft was made.", font=f, fill="#2e3440", anchor="mm")
+    arrow(d, xs[3] + cw // 2, top + ch + 6, xs[3] + cw // 2, gy - 4, "#c0392b")
+    d.text((xs[3] + cw // 2 + 14, top + ch + 55), "your yes", font=fs, fill="#c0392b", anchor="lm")
+    arrow(d, xs[0] + cw // 2, gy - 4, xs[0] + cw // 2, top + ch + 6, "#c0392b")
+    d.text((xs[0] + cw // 2 + 14, top + ch + 55), "comment or status change", font=fs, fill="#c0392b", anchor="lm")
+    img.save(path, optimize=True)
+
+
+def three_runs(path: Path) -> None:
+    """Why remembering matters: three runs in a day, each one reporting only what is new."""
+    w, h = 1500, 600
+    img = Image.new("RGB", (w, h), "#ffffff")
+    d = ImageDraw.Draw(img)
+    fb, f, fs = ImageFont.truetype(SANS_BOLD, 24), ImageFont.truetype(SANS, 19), ImageFont.truetype(SANS, 17)
+    xs, cw = [40, 540, 1040], 420
+    runs = [("9:00", "First run", ["Nothing to compare with yet", "Saves a snapshot", "Shows the plan: 5 items"], "#e5f0ff"),
+            ("11:30", "Second run", ["Since 9:00:", "needs you: new comment on widget-api#30", "needs you: review approved on widget-api#12", "progress: PR #38 merged"], "#e8f6e8"),
+            ("14:00", "Third run", ["Since 11:30:", "needs you: checks failing on PR #44", "nothing else changed", "Saves a new snapshot"], "#fff3d6")]
+    d.line([40, 90, w - 40, 90], fill="#4c566a", width=4)
+    for x, (when, name, lines, fill) in zip(xs, runs):
+        d.ellipse([x + cw // 2 - 14, 76, x + cw // 2 + 14, 104], fill="#4c566a")
+        d.text((x + cw // 2, 52), when, font=fb, fill="#2e3440", anchor="mm")
+        d.rounded_rectangle([x, 150, x + cw, 150 + 330], radius=16, fill=fill, outline="#3b4252", width=2)
+        d.text((x + cw / 2, 184), name, font=fb, fill="#2e3440", anchor="mm")
+        cy = 226
+        for line in lines:
+            for part in wrap(line, f, cw - 48):
+                d.text((x + 24, cy), part, font=f, fill="#c0392b" if line.startswith("needs you") else "#2e3440")
+                cy += 28
+            cy += 10
+        d.line([x + cw // 2, 106, x + cw // 2, 146], fill="#4c566a", width=3)
+    for a, b in zip(xs, xs[1:]):
+        arrow(d, a + cw + 8, 315, b - 8, 315)
+        d.text(((a + cw + b) / 2, 288), "diff", font=fs, fill="#4c566a", anchor="mm")
+    d.text((w / 2, 548), "Each run compares what it sees now with the snapshot from the run before. Example with made-up data.", font=fs, fill="#6b7280", anchor="mm")
+    img.save(path, optimize=True)
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     home = demo_home()
     md = (Path(home) / "out" / "latest.md").read_text()
 
-    boxes(OUT / "fig1-flow.png")
+    who_does_what(OUT / "fig1-who-does-what.png")
+    three_runs(OUT / "fig3-three-runs.png")
+    boxes(ROOT / "docs" / "pipeline.png")  # the internals, for the README; the article leads with the two figures above
 
     plan = tidy(section(md, "## Today's plan"))[:17]
     terminal(["$ work-briefing", "", *plan], OUT / "fig2-plan.png", "work-briefing: today's plan")

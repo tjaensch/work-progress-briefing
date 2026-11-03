@@ -109,6 +109,8 @@ command that writes is the one that asks first.
 
 ## How it works
 
+![The internals: sources, normalise, classify, snooze, score and plan, with a lane that remembers (snapshot, diff, since your last check, reports) and a lane that never writes by itself (drafts, preview and confirm, post).](docs/pipeline.png)
+
 ```
 sources ──► normalise ──► classify ──► snooze ──► score ──► plan
 (gh)        (Item)        (bucket,      (hide,     (why a    (top N,

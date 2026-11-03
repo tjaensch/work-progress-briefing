@@ -2,9 +2,9 @@
 
 > When you have a long list of tickets, pull requests and review requests, and most of them are waiting on somebody else, it gets hard to tell what is ready for you to pick up, what is stuck, and what moved while you were in a meeting. This is a small open-source Python tool that answers those questions at any time of the day. I built it with Copilot's agent mode in VS Code, and it's made to be driven by an agent too: the agent runs it, reads the result and drafts the comments, but nothing gets posted without my yes.
 
-![The pipeline: sources are normalised, classified, snoozed, scored and turned into a plan. Two lanes branch off: one remembers (snapshot, diff, "since your last check", reports), one never writes by itself (drafts, preview, confirm, post).](figures/fig1-flow.png)
+![Four columns: your work (issues, pull requests, review requests) is read by the tool (plain code that remembers the last run, ranks, drafts and writes one JSON file), which a Copilot agent in chat reads and summarizes for you. A red band underneath says the only step that writes anywhere, posting a comment or changing a status, happens only after your yes.](figures/fig1-who-does-what.png)
 
-What happens on every refresh, in one picture.
+Who does what. The tool does the bookkeeping, the agent does the talking, and nothing gets posted without my yes.
 
 The need came up in my day-to-day work. I have a long list of tickets assigned to me, with pull requests and reviews attached to a lot of them, and at any given moment most of the list is waiting on somebody else. What I wanted was simple: every morning, go through everything that has been updated, tell me which tickets are ready for me to continue, and also point out the ones I haven't touched yet that might be ready to start.
 
@@ -36,6 +36,10 @@ The "Why" lines are my favorite part. Every point in a score has a name, so when
 This is the idea that made the tool useful. Every time it runs, it saves a small snapshot of what it saw: the status of each item, who commented, the state of its pull requests, whether the checks are failing. The next run compares the new snapshot with the old one.
 
 Each difference gets two labels: did something move forward, and does it need me? That's all it takes to build a "since your last check" list.
+
+![A timeline with three runs at 9:00, 11:30 and 14:00. The first run has nothing to compare with and saves a snapshot. The second reports what changed since 9:00: a new comment and an approved review need you, and a PR merged. The third reports only that checks started failing on one PR.](figures/fig3-three-runs.png)
+
+Three runs in one day. Each one only tells me what's new.
 
 ![A terminal showing "Since your last check (18h ago)": four lines marked "needs you" (a review approved, a new comment, CI started failing, a new review request), then neutral changes such as a PR going from OPEN to MERGED, followed by "Progress today".](figures/fig3-since-last-check.png)
 

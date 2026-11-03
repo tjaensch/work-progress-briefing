@@ -41,7 +41,8 @@ def test_every_figure_file_is_used_in_the_article():
 
 
 def test_article_length_is_in_the_planned_range():
-    words = len(ARTICLE.read_text().split())
+    prose = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", ARTICLE.read_text())  # alt text is not read as prose
+    words = len(prose.split())
     assert 1500 <= words <= 2600
 
 
