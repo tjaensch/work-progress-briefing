@@ -1,4 +1,4 @@
-# A little tool that tells me what changed since I last looked
+# Building a work briefing that remembers, with GitHub Copilot in VS Code
 
 > When you have a long list of tickets, pull requests and review requests, and most of them are waiting on somebody else, it gets hard to tell what is ready for you to pick up, what is stuck, and what moved while you were in a meeting. This is a small open-source Python tool, built with GitHub Copilot in VS Code, that answers those questions at any time of the day. It never posts anything without asking first.
 
