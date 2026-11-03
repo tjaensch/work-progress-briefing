@@ -68,6 +68,19 @@ class Item:
         return [c for c in self.comments if not c.mine and (since is None or c.created > since)]
 
 
+@dataclass
+class Incoming:
+    """Something waiting on me that is not one of my items, for example a PR I was asked to review."""
+
+    kind: str  # review_request | mention
+    id: str  # a URL, unique
+    title: str
+    url: str = ""
+    when: datetime | None = None
+    detail: str = ""
+    score: float = 0.0
+
+
 @dataclass(frozen=True)
 class Change:
     """One difference between two runs."""
@@ -97,6 +110,7 @@ class Draft:
 class Briefing:
     now: datetime
     items: list[Item] = field(default_factory=list)  # visible items (snoozed ones are in `snoozed`)
+    incoming: list[Incoming] = field(default_factory=list)
     plan: list[dict] = field(default_factory=list)
     changes: list[Change] = field(default_factory=list)
     progress: list[dict] = field(default_factory=list)  # [{"ts", "text"}] newest first, today
