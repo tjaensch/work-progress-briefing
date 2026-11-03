@@ -144,12 +144,22 @@ The demo replays four made-up days through the real GitHub code, with only the `
 
 To use it on your own work, install the [GitHub CLI](https://cli.github.com), run `gh auth login`, then `work-briefing`. If you want to drive it from Copilot chat, copy `examples/copilot-skill/SKILL.md` to `.github/skills/work-progress-briefing/` in your workspace. If your work lives somewhere else, Jira for example, there's a small interface to implement for a new source: return items using the shared set of statuses (todo, in progress, in review, blocked, done) and, if you want drafts to be postable, four small methods. The GitHub adapter is about 250 lines and is the reference.
 
-## What I'd do differently
+## Why this is a stub, and how to make it useful for real work
 
-I'd start with the memory. I added "since your last check" in the second week, and it should have been there on day one, because it's the feature that made the tool useful at any hour of the day.
+The version I use at work is about twice the size of this one, and it's tied to how my work is set up. It reads Jira, mail and my calendar. It knows what my team's statuses mean, who to tag when I nudge somebody, and which of my tickets belong together. I can't share that, and honestly it wouldn't help you if I could, because all the useful parts are the specifics.
 
-I'd also write the "why" text before the score. Naming every point of a score first made me design rules I could actually explain.
+So what you get here is the skeleton without the specifics: remembering the last run, ranking with reasons, snoozing, drafts with a confirmation step, reports, a loud failure signal and an agent skill. What's missing is your work. Here's how I'd turn it into something useful:
 
-It's a small tool, around 2,300 lines of Python and about 240 tests, and the public version has no dependencies beyond the standard library. It probably won't fit anyone else's work exactly. But a few plain ideas (remember the last run, explain every number, ask before writing, fail loudly) turned out to matter more to me than the AI part, and I thought they might be useful to somebody else too.
+* Start from where your work lives. Write an adapter for it that returns items with the shared statuses. The GitHub one is the template, and it's a good job for Copilot too: point it at `github_source.py` and ask for the same thing for your tracker.
+* Map your workflow onto the statuses (todo, in progress, in review, blocked, done). The odd statuses your team invented are where the real value is.
+* Decide what "ready to continue" means for you, and change the rules to match. Mine mostly came from asking what I keep checking by hand.
+* Add whatever you lose time to. For me that was mail and calendar. For you it might be an incident channel or a deploy dashboard.
+* Write the drafts your team would actually send, and who should get tagged, in fixed wording.
+* Put your own rules into the agent skill: what it may do on its own, and what always needs a yes.
+* Make it run without you thinking about it, from a scheduler or an editor task, so the failure banner has something to warn you about.
+
+If you build your own, start with the memory. It's the feature that made the tool useful at any hour of the day, and everything else got easier once it was there.
+
+It's a small tool, around 2,300 lines of Python and about 240 tests, and the public version has no dependencies beyond the standard library. It probably won't fit anyone else's work as it is. But a few plain ideas (remember the last run, explain every number, ask before writing, fail loudly) turned out to matter more to me than the AI part, and I thought they might be useful to somebody else too.
 
 Code is on GitHub under the MIT license. Everything in the demo is made up.
