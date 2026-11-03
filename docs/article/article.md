@@ -45,8 +45,6 @@ Three runs in one day. Each one only tells me what's new.
 
 Same demo, one day later.
 
-I got a detail wrong at first. When a pull request merges, its review state flips from "review required" to "none", and the tool announced that as news. A merged PR's review state isn't news. One line to fix, plus a test so it stays fixed.
-
 ## Snoozing until something happens
 
 Most snooze buttons are timers. What I actually mean when I snooze something is "ignore this until something happens", so a snooze in this tool can end on a date, or when the item changes, whichever comes first. "Changes" means a new comment from someone else, the status moving, or a pull request changing state, review or checks.
@@ -70,7 +68,7 @@ If the item's status changed after the draft was made, it refuses and asks me to
 
 The text of these drafts is fixed wording, not AI output. Something like "PR … has been merged. This is still marked in progress; reviewing whether it can move forward." Boring on purpose, and the same every time.
 
-There's also a rule about when such a draft shows up. It only appears while nothing has touched the item since the merge, because posting the comment touches the item and the draft goes away by itself. My first version had a "no new draft for three days" cooldown. Then I realized the real question isn't how long ago I last commented, it's whether anything has happened since the event the draft is about.
+There's also a rule about when such a draft shows up. It only appears while nothing has touched the item since the merge, because posting the comment touches the item and the draft goes away by itself.
 
 ## When it breaks, I want to know
 
@@ -111,7 +109,7 @@ The weekly report from the demo.
 
 ## How I built it with Copilot
 
-As I said, [Copilot's agent mode](https://code.visualstudio.com/docs/copilot/overview) wrote most of the code. What made me trust the result was a routine I made it follow for every change, even tiny ones:
+As I said, [Copilot's agent mode](https://code.visualstudio.com/docs/copilot/overview) wrote all of the code. What makes me trust code I didn't type myself is a routine I make it follow for every change, even tiny ones:
 
 * write down the change first, in a plan with small items, and what "done" means for each
 * write tests next to it, with made-up data only
@@ -119,15 +117,7 @@ As I said, [Copilot's agent mode](https://code.visualstudio.com/docs/copilot/ove
 * run it for real once, read-only
 * docs, commit, and let CI have a look
 
-The breaking-on-purpose step found real gaps. My tests passed with the "stale" rule changed from "at least seven days" to "more than seven days", because nothing tested exactly seven days. Now something does.
-
-Some of what went wrong along the way:
-
-* I wrote a small guard that blocks a commit if certain words show up in files, file names, commit messages or anywhere in the history. The first version reported a hit by printing the file name, and the forbidden word was in the file name. A test caught that.
-* Copilot wrote a test assertion that could never fail (it ended in "or True"), and I approved it, so we share the blame. It was hiding that one of my reports named a command that doesn't exist.
-* My break-it-on-purpose script was broken the first time. I checked for survivors by searching the output for the word "passed", but a failing run also prints "1 failed, 5 passed", so every single change "survived". For a minute I thought my tests were worthless. They weren't, the checker was wrong.
-
-Copilot and I both make plausible mistakes. The routine is there to make them expensive to keep.
+The breaking-on-purpose step is the one I'd keep if I could only keep one. A green test run only tells you the tests pass, not that they would ever fail.
 
 ## Try it
 
