@@ -9,6 +9,9 @@ It started as a "morning briefing" and stopped being one the moment it could be 
 the last time*. That one idea, a tool that remembers its previous run, drives most of the design (see
 [How it works](#how-it-works)).
 
+The story behind it, and how it was built with Copilot's agent mode:
+[Building a work briefing that remembers, with GitHub Copilot in VS Code](https://medium.com/@tebugging/building-a-work-briefing-that-remembers-with-github-copilot-in-vs-code-09cb5b415623) on Medium.
+
 > All example data in this repository is fictional (an invented organisation called `acme-labs`).
 
 ## Try it in two minutes, no account needed

@@ -48,3 +48,9 @@ def test_article_length_is_in_the_planned_range():
 
 def test_house_style_no_bold_text():
     assert "**" not in ARTICLE.read_text()  # the author does not use bold in articles
+
+
+def test_readme_links_the_published_story_without_tracking_parameters():
+    readme = (ARTICLE.parents[2] / "README.md").read_text()
+    links = re.findall(r"https://medium\.com/[^\s)]+", readme)
+    assert len(links) == 1 and "?" not in links[0] and "building-a-work-briefing-that-remembers" in links[0]
