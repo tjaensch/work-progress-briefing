@@ -215,3 +215,10 @@ def test_eod_drafts_live_in_their_own_file_and_are_found_after_a_refresh_rewrite
     actions.save_drafts(tmp_path, [eod], NOW, prefix="drafts-eod")
     actions.save_drafts(tmp_path, [], NOW)
     assert actions.load_draft(tmp_path, "a#1:eod_update").comment == "c"
+
+
+def test_saving_drafts_leaves_no_temp_files_and_replaces_in_one_step(tmp_path):
+    actions.save_drafts(tmp_path, [CLOSE], NOW)
+    actions.save_drafts(tmp_path, [], NOW)
+    assert [p.name for p in tmp_path.iterdir()] == [f"drafts-{NOW:%Y-%m-%d}.json"]
+    assert json.loads((tmp_path / f"drafts-{NOW:%Y-%m-%d}.json").read_text()) == []

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Callable, Protocol
 
 from .models import Draft, Item
+from .util import atomic_write
 
 
 class Tracker(Protocol):
@@ -102,9 +103,8 @@ def build_drafts(items: list[Item], now: datetime, nudge_after_days: int = 3, mi
 
 def save_drafts(out_dir: Path, drafts: list[Draft], now: datetime, prefix: str = "drafts") -> Path:
     """`prefix="drafts-eod"` keeps end-of-day drafts apart, so a refresh (which rewrites drafts-DATE.json) never drops them."""
-    out_dir.mkdir(parents=True, exist_ok=True)
     p = out_dir / f"{prefix}-{now:%Y-%m-%d}.json"
-    p.write_text(json.dumps([d.__dict__ for d in drafts], indent=1))
+    atomic_write(p, json.dumps([d.__dict__ for d in drafts], indent=1))
     return p
 
 

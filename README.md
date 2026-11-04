@@ -51,8 +51,8 @@ keeps using the demo data. It never reaches GitHub.
 
 ```bash
 gh auth login                       # once
-pip install .                       # or run it as `python3 -m work_briefing`
-work-briefing                       # refresh and print a summary
+python3 -m work_briefing            # refresh and print a summary, from the cloned folder
+pipx install .                      # optional: a `work-briefing` command you can run from anywhere
 work-briefing run --full            # the whole briefing as markdown
 ```
 
@@ -98,12 +98,12 @@ Optional `config.json` in the home folder; an unknown key is an error, so a typo
 
 It's meant to live where you already work. [`examples/vscode/tasks.json`](examples/vscode/tasks.json) has two VS Code tasks: one
 runs the briefing and opens `latest.md` in a tab whenever you open the folder (VS Code asks once to allow automatic tasks), the
-other is "refresh now" from the command palette (Tasks: Run Task). Copy it to `.vscode/tasks.json`. If a refresh fails, the
+other is "refresh now" from the command palette (Tasks: Run Task). Copy it to `.vscode/tasks.json`. The tasks run the `work-briefing` command, so install it first (`pipx install .` in the cloned folder). If a refresh fails, the
 failure banner appears at the top of that same tab.
 
 ## Use it from an AI agent (optional)
 
-The tool has no model inside it, but it is built to be driven by one. [`examples/copilot-skill/SKILL.md`](examples/copilot-skill/SKILL.md)
+The tool has no model inside it, but it is built to be driven by one. (The skill runs the `work-briefing` command, so install it first with `pipx install .`.) [`examples/copilot-skill/SKILL.md`](examples/copilot-skill/SKILL.md)
 is a skill for GitHub Copilot in VS Code: copy it (a copy, not a symlink, since symlinked skills are not always discovered)
 to `.github/skills/work-progress-briefing/SKILL.md` in your workspace, reload the window, and type
 `/work-progress-briefing` in chat. The agent refreshes the briefing, summarises `latest.json`, answers follow-up questions

@@ -43,7 +43,7 @@ Three runs in one day. Each one only tells me what's new.
 
 ![A terminal showing "Since your last check (18h ago)": four lines marked "needs you" (a review approved, a new comment, CI started failing, a new review request), then neutral changes such as a PR going from OPEN to MERGED, followed by "Progress today".](figures/fig3-since-last-check.png)
 
-Same demo, one day later.
+The same briefing, the part that compares it with the run 18 hours earlier.
 
 ## Snoozing until something happens
 
@@ -74,7 +74,7 @@ There's also a rule about when such a draft shows up. It only appears while noth
 
 A briefing you trust is dangerous when it's quietly out of date. So when a refresh fails, the tool writes a small status file and puts a banner at the top of the briefing, which is useful because I usually have that file open in an editor tab. It also tells apart errors that retrying can fix from ones it can't, like not being logged in.
 
-Files are written under a temporary name and then renamed, and anything that changes state takes a lock, so two runs can't trample each other.
+Files are written under a temporary name and then renamed, and a refresh or a snooze change takes a lock, so two runs can't trample each other.
 
 ## Agentic AI, twice
 
@@ -129,7 +129,7 @@ python3 -m work_briefing demo
 
 The demo replays four made-up days through the real GitHub code, with only the `gh` command faked, and prints the final briefing plus a stand-up and a weekly report. Commands pointed at the demo folder never touch GitHub, including the one that posts.
 
-To use it on your own work, install the [GitHub CLI](https://cli.github.com), run `gh auth login`, then `work-briefing`. To have it open in your editor when you open a project, copy `examples/vscode/tasks.json` to `.vscode/`. If you want to drive it from Copilot chat, copy `examples/copilot-skill/SKILL.md` to `.github/skills/work-progress-briefing/` in your workspace.
+To use it on your own work you need Python 3.10 or newer and the [GitHub CLI](https://cli.github.com). Run `gh auth login` once, then `python3 -m work_briefing` from the cloned folder. If you'd like a `work-briefing` command you can run from anywhere, install it with `pipx install .`. The editor task and the chat skill below both use that command. To have it open in your editor when you open a project, copy `examples/vscode/tasks.json` to `.vscode/`. If you want to drive it from Copilot chat, copy `examples/copilot-skill/SKILL.md` to `.github/skills/work-progress-briefing/` in your workspace.
 
 ## Why this is a stub, and how to make it useful for real work
 
