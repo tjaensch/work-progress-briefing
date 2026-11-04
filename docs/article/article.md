@@ -148,4 +148,4 @@ If you build your own, start with the memory. It's the feature that made the too
 
 It's a small tool, around 2,300 lines of Python and about 240 tests, and the public version has no dependencies beyond the standard library. It probably won't fit anyone else's work as it is. But a few plain ideas (remember the last run, explain every number, ask before writing, fail loudly) turned out to matter more to me than the AI part, and I thought they might be useful to somebody else too.
 
-Code is on GitHub under the MIT license. Everything in the demo is made up.
+Code is on [GitHub](https://github.com/tjaensch/work-progress-briefing) under the MIT license. Everything in the demo is made up.
