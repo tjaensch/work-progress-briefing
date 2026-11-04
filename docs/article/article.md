@@ -1,6 +1,6 @@
 # Building a work briefing that remembers, with GitHub Copilot in VS Code
 
-> When you have a long list of Jira tickets, pull requests and review requests, and most of them are waiting on somebody else, it gets hard to tell what is ready for you to pick up, what is stuck, and what moved while you were in a meeting. This is a small open-source Python tool that answers those questions at any time of the day. I built it with Copilot's agent mode in VS Code, and it's made to be driven by an agent too: the agent runs it, reads the result and drafts the comments, but nothing gets posted without my yes.
+> Most of the Jira tickets on my list are waiting on somebody else, a few are quietly ready for me, and I couldn't tell which was which without clicking through every ticket and pull request. So I built a small open-source Python tool that checks all of it, remembers what it saw last time, and tells me what's ready, what's stuck and what moved while I was in a meeting. I wrote it with Copilot's agent mode in VS Code, and an agent can drive it too: it runs the tool, reads the result and drafts the comments, but nothing gets posted without my yes.
 
 ![Four columns: your work (issues, pull requests, review requests) is read by the tool (plain code that remembers the last run, ranks, drafts and writes one JSON file), which a Copilot agent in chat reads and summarizes for you. A red band underneath says the only step that writes anywhere, posting a comment or changing a status, happens only after your yes.](figures/fig1-who-does-what.png)
 
