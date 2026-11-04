@@ -1,12 +1,12 @@
 # Building a work briefing that remembers, with GitHub Copilot in VS Code
 
-> Most of the Jira tickets on my list are waiting on somebody else, a few are quietly ready for me, and I couldn't tell which was which without clicking through every ticket and pull request. So I built a small open-source Python tool that checks all of it, remembers what it saw last time, and tells me what's ready, what's stuck and what moved while I was in a meeting. I wrote it with Copilot's agent mode in VS Code, and an agent can drive it too: it runs the tool, reads the result and drafts the comments, but nothing gets posted without my yes.
+> I keep a long list of Jira tickets, and at any moment they're in different states: some in review, some blocked, a few quietly ready to pick up again. I couldn't tell which was which without clicking through every ticket and pull request. So I built a small open-source Python tool that checks all of it, remembers what it saw last time, and tells me what's ready, what's stuck and what moved while I was in a meeting. I wrote it with Copilot's agent mode in VS Code, and an agent can drive it too: it runs the tool, reads the result and drafts the comments, but nothing gets posted without my yes.
 
 ![Four columns: your work (issues, pull requests, review requests) is read by the tool (plain code that remembers the last run, ranks, drafts and writes one JSON file), which a Copilot agent in chat reads and summarizes for you. A red band underneath says the only step that writes anywhere, posting a comment or changing a status, happens only after your yes.](figures/fig1-who-does-what.png)
 
 Who does what. The tool does the bookkeeping, the agent does the talking, and nothing gets posted without my yes.
 
-The need came up in my day-to-day work. I have a long list of Jira tickets assigned to me, with GitHub pull requests and reviews attached to a lot of them, and at any given moment most of the list is waiting on somebody else. What I wanted was simple: every morning, go through everything that has been updated, tell me which tickets are ready for me to continue, and also point out the ones I haven't touched yet that might be ready to start.
+The need came up in my day-to-day work. I have a long list of Jira tickets assigned to me, with GitHub pull requests and reviews attached to a lot of them, and at any given moment they're in all kinds of states: in review, blocked, ready to pick up again. What I wanted was simple: every morning, go through everything that has been updated, tell me which tickets are ready for me to continue, and also point out the ones I haven't touched yet that might be ready to start.
 
 Claude Desktop was the first thing I thought of, but at the time it couldn't connect to most of the places my work lives. Copilot in VS Code could already reach Jira and GitHub, so I started there and had it build the first version as a script.
 
